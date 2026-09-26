@@ -76,14 +76,12 @@ def combine_ner_tokens(ner_tags):
             
     return clean_entities
 
-# --- 3. Manage State ---
+# --- 3. Manage State (เคลียร์ค่าว่างพร้อมรับข่าวใหม่) ---
 if "news_headline_state" not in st.session_state:
-    st.session_state["news_headline_state"] = "“ทรงศักดิ์” ชี้แจงว่า “เอาอยู่” หมายถึงรัฐบาลเตรียมความพร้อม ไม่ได้หมายถึงเอาชนะธรรมชาติ"
+    st.session_state["news_headline_state"] = ""
 
 if "news_body_state" not in st.session_state:
-    st.session_state["news_body_state"] = """นายทรงศักดิ์ กล่าวด้วยว่า หากน้ำไม่สามารถระบายออกจากพื้นที่ได้ การสูบน้ำจากจุดหนึ่งไปยังอีกจุดหนึ่งก็อาจทำให้สูบน้ำกลับมาที่เดิม ดังนั้นโจทย์สำคัญคือการทำให้น้ำสามารถออกจากพื้นที่ชั้นในและระบายลงสู่ทะเลได้อย่างต่อเนื่อง
-
-อย่างไรก็ตาม ปัจจัยสำคัญในขณะนี้คือปริมาณฝนที่ตกลงมาเกินกว่าที่คาดการณ์ ส่งผลให้ระบบระบายน้ำต้องรับภาระเพิ่มขึ้น ขณะที่คลองหลายแห่งมีน้ำเต็ม จึงจำเป็นต้องเร่งบริหารจัดการและสูบน้ำออกจากพื้นที่ชั้นในลงสู่ทะเล เพื่อเปิดพื้นที่ในระบบคลองให้สามารถรองรับน้ำและระบายต่อไปได้"""
+    st.session_state["news_body_state"] = ""
 
 # --- 4. Tabs ---
 tab1, tab2 = st.tabs(["📰 1. วิเคราะห์ตัวเนื้อหาข่าว & แหล่งอ้างอิง (Content & Reference)", "💬 2. วิเคราะห์สัญญาณเตือนจากคอมเมนต์ (Comment Signals)"])
@@ -97,9 +95,9 @@ with tab1:
     col_input1, col_input2 = st.columns([1, 2])
     
     with col_input1:
-        input_headline = st.text_input("พาดหัวข่าว (Headline):", value=st.session_state["news_headline_state"], key="headline_box")
+        input_headline = st.text_input("พาดหัวข่าว (Headline):", value=st.session_state["news_headline_state"], placeholder="ใส่พาดหัวข่าวที่นี่...", key="headline_box")
     with col_input2:
-        input_news_body = st.text_area("เนื้อหาข่าวแบบเต็ม (News Body):", value=st.session_state["news_body_state"], height=140, key="news_body_box")
+        input_news_body = st.text_area("เนื้อหาข่าวแบบเต็ม (News Body):", value=st.session_state["news_body_state"], height=140, placeholder="ก๊อปปี้เนื้อหาข่าวแบบเต็มมาวางที่นี่...", key="news_body_box")
         
     st.session_state["news_headline_state"] = input_headline
     st.session_state["news_body_state"] = input_news_body
@@ -109,7 +107,7 @@ with tab1:
 
     if st.button("🔎 ตรวจสอบเนื้อหาและค้นหาแหล่งอ้างอิง", type="primary", key="btn_check_news"):
         if not full_news_text.strip():
-            st.warning("กรุณาใส่เนื้อหาข่าวก่อนครับ")
+            st.warning("กรุณาใส่เนื้อหาข่าวก่อนทำการตรวจสอบครับ")
         else:
             with st.spinner("⚡ AI กำลังประมวลผล ตรวจสอบโครงสร้างภาษา และค้นหาแหล่งอ้างอิง..."):
                 col1, col2 = st.columns(2)
@@ -126,7 +124,6 @@ with tab1:
                 confidence = res['scores'][0] * 100
                 found_clickbait = [w for w in clickbait_words if w in full_news_text]
                 
-                # --- คำนวณ Content Trust Score ---
                 content_score = 90 if "Official News" in top_label else (40 if found_clickbait else 60)
                 
                 with col1:
@@ -146,10 +143,8 @@ with tab1:
 
                 st.markdown("---")
                 
-                # --- ส่วนที่เพิ่มใหม่: เหตุผลของ AI & ลิงก์อ้างอิง ---
-                st.markdown("### 🧠 ทำไม AI ถึงประเมินว่าข่าวนี้มีแนวโน้มเป็น 'ข่าวจริง/น่าเชื่อถือ'?")
+                st.markdown("### 🧠 ทำไม AI ถึงประเมินข่าวนี้?")
                 
-                # ดึง NER หาบุคคล/สถานที่มาอ้างอิง
                 clean_ner_input = full_news_text[:300].replace("\n", " ").strip()
                 raw_ner_tags = ner_engine.tag(clean_ner_input)
                 merged_entities = combine_ner_tokens(raw_ner_tags)
@@ -167,6 +162,9 @@ with tab1:
                     if not found_clickbait:
                         reasons.append("✅ **ปราศจากภาษาปั่นกระแส (No Clickbait):** ไม่พบคำกระตุ้นให้เกิดความตื่นตระหนกหรือบังคับแชร์")
                     
+                    if not reasons:
+                        reasons.append("⚠️ **ควรระมัดระวัง:** เนื้อหามีลักษณะเป็นข่าวลือ หรือใช้ภาษาเร้าอารมณ์เกินจริง")
+
                     for r in reasons:
                         st.markdown(r)
                         
@@ -174,10 +172,10 @@ with tab1:
                     st.markdown("**🔗 ปุ่มตรวจสอบแหล่งอ้างอิงภายนอก (Cross-Verification):**")
                     st.caption("สามารถกดปุ่มด้านล่างเพื่อตรวจสอบข่าวนี้กับสำนักข่าวชั้นนำหรือ Google Search ได้ทันที:")
                     
-                    # สร้าง Search URL สำหรับตรวจสอบข่าว
-                    query = urllib.parse.quote(input_headline)
+                    search_query = input_headline if input_headline.strip() else input_news_body[:50]
+                    query = urllib.parse.quote(search_query)
                     google_search_url = f"https://www.google.com/search?q={query}"
-                    fact_check_url = f"https://www.google.com/search?q={urllib.parse.quote(input_headline + ' ข่าวจริง หรือ ข่าวปลอม')}"
+                    fact_check_url = f"https://www.google.com/search?q={urllib.parse.quote(search_query + ' ข่าวจริง หรือ ข่าวปลอม')}"
                     
                     st.link_button("🌐 ค้นหาข่าวนี้ใน Google (เพื่อเทียบกับสำนักข่าวหลัก)", google_search_url, use_container_width=True)
                     st.link_button("🔎 ตรวจสอบประวัติการ Fact-Check ของข่าวนี้", fact_check_url, use_container_width=True)
@@ -198,23 +196,23 @@ with tab1:
 with tab2:
     st.subheader("2. วิเคราะห์สัญญาณหักล้าง/เตือนภัยจากคอมเมนต์ของผู้คน")
     
-    current_news = f"พาดหัว: {st.session_state['news_headline_state']}\n\nเนื้อหา: {st.session_state['news_body_state']}"
-    st.info(f"📌 **ข่าวที่กำลังอ้างอิงวิเคราะห์:**\n\n\"{current_news[:250]}...\"")
+    current_news_head = st.session_state['news_headline_state']
+    current_news_body = st.session_state['news_body_state']
     
-    default_comments = """รับทราบครับ เป็นกำลังใจให้เจ้าหน้าที่ทุกท่าน
-นายทรงศักดิ์ลงพื้นที่เองเลย ขอบคุณครับ
-ข่าวปลอมครับ เรื่องนี้ยังไม่มีการประชุมเลย
-ภาพเก่าเอามาเล่าใหม่หรือเปล่าครับ"""
-
-    comments_text = st.text_area("ก๊อปปี้คอมเมนต์มาวางที่นี่ (แยกบรรทัด):", value=default_comments, height=160, key="comments_input")
+    if current_news_head or current_news_body:
+        st.info(f"📌 **ข่าวที่กำลังอ้างอิงวิเคราะห์:** {current_news_head} {current_news_body[:150]}...")
+    else:
+        st.warning("📌 **ยังไม่ได้ระบุข่าวใน Tab 1** (สามารถวางคอมเมนต์เพื่อประมวลผลก่อนได้)")
+    
+    comments_text = st.text_area("ก๊อปปี้คอมเมนต์มาวางที่นี่ (แยกบรรทัด):", value="", height=160, placeholder="ก๊อปปี้คอมเมนต์มาวางบรรทัดละ 1 ข้อความ...", key="comments_input")
 
     if st.button("📊 ประมวลผลความน่าเชื่อถือจากคอมเมนต์", type="primary", key="btn_check_comments"):
-        with st.spinner("⚡ กำลังวิเคราะห์ความคิดเห็น..."):
-            comment_list = [c.strip() for c in comments_text.split("\n") if c.strip()]
-            
-            if not comment_list:
-                st.warning("กรุณาใส่คอมเมนต์อย่างน้อย 1 บรรทัดครับ")
-            else:
+        if not comments_text.strip():
+            st.warning("กรุณาใส่คอมเมนต์อย่างน้อย 1 บรรทัดครับ")
+        else:
+            with st.spinner("⚡ กำลังวิเคราะห์ความคิดเห็น..."):
+                comment_list = [c.strip() for c in comments_text.split("\n") if c.strip()]
+                
                 fake_warning_words = ["ข่าวปลอม", "ปลอม", "เฟคนิวส์", "fake news", "ไม่จริง", "หลอกลวง", "อย่าเชื่อ", "ภาพเก่า", "บิดเบือน"]
                 sarcasm_words = ["เอาอยู่", "ถอดบทเรียน", "ดีเยี่ยม", "เจริญ", "ทรงคุณค่า"]
                 
@@ -264,4 +262,3 @@ with tab2:
 
                 st.markdown("#### ตารางแจกแจงคอมเมนต์รายบุคคล")
                 st.dataframe(pd.DataFrame(detailed_results), use_container_width=True)
-                
