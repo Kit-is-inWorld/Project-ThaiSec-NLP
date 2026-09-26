@@ -264,3 +264,4 @@ with tab2:
 
                 st.markdown("#### ตารางแจกแจงคอมเมนต์รายบุคคล")
                 st.dataframe(pd.DataFrame(detailed_results), use_container_width=True)
+                
