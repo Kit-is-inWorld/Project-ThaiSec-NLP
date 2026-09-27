@@ -11,7 +11,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- ส่วนที่เพิ่มใหม่: Custom CSS ตกแต่งธีม Disney+ Hotstar ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
@@ -94,16 +93,15 @@ h1, h2, h3, h4, h5, h6 {
 """, unsafe_allow_html=True)
 
 # ส่วนแสดง Header ของเว็บ
-st.markdown('<div class="disney-header">✨ Thai Fact-Check & Sentiment Radar</div>', unsafe_allow_html=True)
+st.markdown('<div class="disney-header">✨ Thai Fact-Check & Sentiment Radar </div>', unsafe_allow_html=True)
 st.markdown('<div class="disney-caption">ระบบวิเคราะห์ความน่าเชื่อถือของข่าวและตรวจสอบแหล่งอ้างอิง</div>', unsafe_allow_html=True)
 # -----------------------------------------------------------
-
 
 # --- 2. โหลดโมเดล AI ---
 @st.cache_resource
 def load_models():
     sentiment_model = pipeline(
-        "sentiment-analysis", 
+        "sentiment-analysis",
         model="poom-sci/WangchanBERTa-finetuned-sentiment"
     )
     classifier_model = pipeline(
